@@ -25,6 +25,7 @@ class Register(Enum):
     TEMP = 3
     IN = 4
     OUT = 5
+    AR = 6
 
 
 class Interpreter:
@@ -35,7 +36,7 @@ class Interpreter:
         self.RAM: List[str] = [None] * 32  # Initialize RAM with 32 empty slots
         self.labels: Dict[str, int] = {}
         self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.TEMP: 0,
-                                               Register.IN: None, Register.OUT: None}
+                                               Register.IN: None, Register.OUT: None, Register.AR: None}
         self.current_line = 0
         self.load_data_into_RAM()
         self.parse()
@@ -103,8 +104,12 @@ class Interpreter:
                 self.RAM[i] = line.rstrip('\n')
 
     def step(self):
-        if self.current_line < len(self.RAM):  # Change this line
-            line: str = self.RAM[self.current_line]  # Change this line
+        if self.current_line < len(self.RAM):
+            line: str = self.RAM[self.current_line]
+            if line.split(" ")[0].isdigit():
+                # This line is data, not a command
+                self.current_line += 1
+                return
             command: Command = self.extract_command(line)
             if command in [Command.JUM, Command.JUZ]:
                 label = line.split(" ")[1]
@@ -124,6 +129,9 @@ class Interpreter:
 
     def parse_command(self, command: Command, line: str) -> None:
         parts = line.split(" ")
+        if len(parts) > 1:
+            # If the command has an address part, load it into the AR
+            self.registers[Register.AR] = int(parts[1])
         if command == Command.LOM:
             self._handle_lom(int(parts[1]))
         elif command == Command.OUT:
@@ -155,21 +163,24 @@ class Interpreter:
 
     def _handle_lom(self, address: int) -> None:
         # Load the data from the memory address
-        data = int(self.RAM[address])
+        data = int(self.RAM[self.registers[Register.AR]])
         # Store the data in the ACC register
         self.registers[Register.ACC] = data
         # Increment the program counter
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_out(self, val: int, dst: str) -> None:
         self.registers[Register.OUT] = val
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_sto(self, address: int) -> None:
         # Store the data from the ACC register to the memory address
         self.RAM[address] = str(self.registers[Register.ACC])
         # Increment the program counter
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_add(self, address: int) -> None:
         # Add the data from the memory address to the ACC register
@@ -177,44 +188,54 @@ class Interpreter:
         self.registers[Register.ACC] += data
         # Increment the program counter
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_sub(self, val: str) -> None:
         self.registers[Register.ACC] -= int(val)
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_mul(self, val: str) -> None:
         self.registers[Register.ACC] *= int(val)
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
 
     def _handle_inr(self, reg: str) -> None:
         self.registers[Register.ACC] += 1
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_inp(self, reg: str) -> None:
         self.registers[Register.ACC] = self.registers[Register.IN]
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_and(self, val: str) -> None:
         self.registers[Register.ACC] &= int(val)
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_or(self, val: str) -> None:
         self.registers[Register.ACC] |= int(val)
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_xor(self, val: str) -> None:
         self.registers[Register.ACC] ^= int(val)
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_not(self, reg: str) -> None:
         self.registers[Register.ACC] = ~self.registers[Register.ACC]
         self.registers[Register.PC] += 1
+        self.update_RAM()
 
     def _handle_fin(self) -> None:
         # Set the program counter to the end of the RAM
         self.registers[Register.PC] = len(self.RAM)
         self.terminated = True
+        self.update_RAM()
 
     def _handle_jump(self, command: Command, label: str):
         if command == Command.JUM:
