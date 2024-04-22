@@ -147,10 +147,19 @@ class SimulatorGUI:
                     self.ram_cells[i].insert(0, line)
         print("Program executed successfully!")
 
+    def update_ram(self):
+        # Update the RAM cells with the current state of the RAM
+        for i, line in enumerate(self.interpreter.RAM):
+            self.ram_cells[i].delete(0, tk.END)
+            if line is not None:
+                self.ram_cells[i].insert(0, line)
+
     def step(self):
         if self.interpreter is not None:
             self.interpreter.step()
             self.update_registers()
+            self.update_display()
+            self.update_ram()
 
     def stop(self):
         pass

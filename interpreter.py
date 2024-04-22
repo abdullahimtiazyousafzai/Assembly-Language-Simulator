@@ -60,9 +60,7 @@ class Interpreter:
         for i in range(len(self.RAM)):
             if self.__is_label(self.RAM[i]):
                 label = self.RAM[i][:-1]
-                if label in self.labels:
-                    raise Exception("Label {} already defined".format(label))
-                else:
+                if label not in self.labels:
                     self.labels[label] = i
 
     def run(self) -> None:
@@ -127,7 +125,7 @@ class Interpreter:
         if command == Command.LOM:
             self._handle_lom(int(parts[1]))
         elif command == Command.OUT:
-            self._handle_out(int(parts[1]), parts[2] if len(parts) > 2 else None)
+            self._handle_out()
         elif command == Command.STO:
             self._handle_sto(int(parts[1]))
         elif command == Command.ADD:
@@ -139,7 +137,7 @@ class Interpreter:
         elif command == Command.INR:
             self._handle_inr(parts[1])
         elif command == Command.INP:
-            self._handle_inp(parts[1])
+            self._handle_inp()
         elif command == Command.AND:
             self._handle_and(parts[1])
         elif command == Command.OR:
@@ -161,8 +159,8 @@ class Interpreter:
         # Increment the program counter
         self.registers[Register.PC] += 1
 
-    def _handle_out(self, val: int, dst: str) -> None:
-        self.registers[Register.OUT] = val
+    def _handle_out(self) -> None:
+        self.registers[Register.OUT] = self.registers[Register.ACC]
         self.registers[Register.PC] += 1
 
     def _handle_sto(self, address: int) -> None:
@@ -191,7 +189,7 @@ class Interpreter:
         self.registers[Register.ACC] += 1
         self.registers[Register.PC] += 1
 
-    def _handle_inp(self, reg: str) -> None:
+    def _handle_inp(self) -> None:
         self.registers[Register.ACC] = self.registers[Register.IN]
         self.registers[Register.PC] += 1
 
@@ -225,7 +223,7 @@ class Interpreter:
             return self.current_line + 1
 
     def __is_label(self, line: str) -> bool:
-        return line is not None and line[-1] == ":"
+        return line is not None and line != "" and line[-1]
 
     def __is_comment(self, line: str) -> bool:
         return line.startswith('#')
