@@ -40,6 +40,23 @@ class SimulatorGUI:
         self.stop_button = ttk.Button(self.cpu_frame, text="Stop", command=self.stop)
         self.stop_button.pack(side=tk.TOP)
         self.cpu_entries = []
+        self.reset_button = ttk.Button(self.cpu_frame, text="Reset Registers", command=self.reset_registers)
+        self.reset_button.pack(side=tk.TOP)
+
+    def reset_registers(self):
+        if self.interpreter is not None:
+            for register in self.interpreter.registers:
+                self.interpreter.registers[register] = 0
+            self.update_registers()
+            print("Registers reset successfully!")
+
+    def save_program(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+        if file_path:
+            with open(file_path, 'w') as file:
+                for cell in self.ram_cells:
+                    file.write(cell.get() + '\n')
+            print("Program saved successfully!")
 
     def update_registers(self):
         registers = self.interpreter.registers
@@ -50,6 +67,8 @@ class SimulatorGUI:
     def create_ram(self):
         self.ram_frame = ttk.LabelFrame(self.root, text="RAM")
         self.ram_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.save_button = ttk.Button(self.ram_frame, text="Save Program", command=self.save_program)
+        self.save_button.pack(side=tk.TOP)
         self.ram_cells = []
         for i in range(32):
             if i == 16:
@@ -108,6 +127,7 @@ class SimulatorGUI:
 
             # Clear the display
             self.display.delete('1.0', tk.END)
+            self.reset_registers()
 
     def update_display(self):
         self.display.insert(tk.END, str(self.interpreter.registers[Register.OUT]) + '\n')
