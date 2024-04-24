@@ -238,15 +238,8 @@ class Interpreter:
 
     def _handle_juz(self) -> None:
         if self.registers[Register.ACC] == 0:
-            adr = self.registers[Register.ADR]
-            if 0 <= adr < len(self.RAM):
-                self.registers[
-                    Register.PC] = adr - 1  # Decrement the program counter to execute the correct instruction
-                self.current_line = adr
-            else:
-                raise ValueError("Invalid memory address for JUZ instruction")
-        else:
-            self.registers[Register.PC] += 1  # If ACC is not zero, continue to the next instruction
+            self.current_line = self.registers[Register.ADR]
+            self.registers[Register.PC] = self.current_line
 
     def __is_comment(self, line: str) -> bool:
         return line.startswith('#')
