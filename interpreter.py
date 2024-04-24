@@ -174,8 +174,8 @@ class Interpreter:
 
     def _handle_sub(self) -> None:
         # Subtract the data from the memory address from the ACC register
-        data = int(self.RAM[int(self.registers[Register.ADR])])
-        self.registers[Register.ACC] = int(self.registers[Register.ACC]) - data
+        data = int(self.RAM[self.registers[Register.ADR]])
+        self.registers[Register.ACC] -= data
         # Increment the program counter
         self.registers[Register.PC] += 1
 
@@ -232,14 +232,21 @@ class Interpreter:
         adr = self.registers[Register.ADR]
         if 0 <= adr < len(self.RAM):
             self.registers[Register.PC] = adr - 1  # Decrement the program counter to execute the correct instruction
-            self.current_line = adr
+            self.registers[Register.IR] = self.RAM[adr]  # Load the instruction into IR
         else:
             raise ValueError("Invalid memory address for JUM instruction")
 
     def _handle_juz(self) -> None:
         if self.registers[Register.ACC] == 0:
-            self.current_line = self.registers[Register.ADR]
-            self.registers[Register.PC] = self.current_line
+            adr = self.registers[Register.ADR]
+            if 0 <= adr < len(self.RAM):
+                self.registers[
+                    Register.PC] = adr - 1  # Decrement the program counter to execute the correct instruction
+                self.registers[Register.IR] = self.RAM[adr]  # Load the instruction into IR
+            else:
+                raise ValueError("Invalid memory address for JUZ instruction")
+        else:
+            self.registers[Register.PC] += 1
 
     def __is_comment(self, line: str) -> bool:
         return line.startswith('#')
