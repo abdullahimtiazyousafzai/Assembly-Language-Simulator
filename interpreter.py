@@ -59,31 +59,40 @@ class Interpreter:
 
     def run(self) -> None:
         terminated = False
-        current_line = 0
         while not self.terminated:
-            line: str = self.RAM[current_line]
-            if line is None:
-                break
-            elif line.split(" ")[0].isdigit():
-                # This line is data, not a command
-                current_line += 1
-                continue
-            else:
-                # Load the instruction into the IR
-                self.registers[Register.IR] = line
-                # Parse and execute the instruction
-                command: Command = self.extract_command(line)
-                self.parse_command(command, line)
-                current_line += 1
+            if self.registers[Register.PC] < len(self.RAM):
+                line: str = self.RAM[self.registers[Register.PC]]
+                if line is None:
+                    break
+                elif line.split(" ")[0].isdigit():
+                    # This line is data, not a command
+                    self.registers[Register.PC] += 1
+                    continue
+                else:
+                    # Load the instruction into the IR
+                    self.registers[Register.IR] = line
+                    # Parse and execute the instruction
+                    command: Command = self.extract_command(line)
+                    self.parse_command(command, line)
 
-            if current_line >= len(self.RAM) or self.RAM[current_line] is None:
+                    # Check if the instruction was JUM or JUZ
+                    if command in [Command.JUM, Command.JUZ]:
+                        # Decrement the program counter to execute the correct instruction
+                        self.registers[Register.PC] = self.registers[Register.ADR]
+                        continue  # Skip the program counter increment below
+                    else:
+                        # Increment the program counter
+                        self.registers[Register.PC] += 1
+
+                    if self.update_display is not None:
+                        self.update_display()
+
+                if self.registers[Register.PC] >= len(self.RAM) or self.RAM[self.registers[Register.PC]] is None:
+                    terminated = True
+            else:
                 terminated = True
 
-            self.registers[Register.PC] = current_line
             self.update_RAM()
-
-            if self.update_display is not None:
-                self.update_display()
 
     def update_RAM(self):
         for i, line in enumerate(self.RAM):
@@ -231,8 +240,9 @@ class Interpreter:
     def _handle_jum(self) -> None:
         adr = self.registers[Register.ADR]
         if 0 <= adr < len(self.RAM):
-            self.registers[Register.PC] = adr - 1  # Decrement the program counter to execute the correct instruction
-            self.registers[Register.IR] = self.RAM[adr]  # Load the instruction into IR
+            # Load the instruction at the specified address and execute it
+            self.registers[Register.PC] = adr
+            self.registers[Register.IR] = self.RAM[adr]
         else:
             raise ValueError("Invalid memory address for JUM instruction")
 
@@ -240,9 +250,9 @@ class Interpreter:
         if self.registers[Register.ACC] == 0:
             adr = self.registers[Register.ADR]
             if 0 <= adr < len(self.RAM):
-                self.registers[
-                    Register.PC] = adr - 1  # Decrement the program counter to execute the correct instruction
-                self.registers[Register.IR] = self.RAM[adr]  # Load the instruction into IR
+                # Load the instruction at the specified address and execute it
+                self.registers[Register.PC] = adr
+                self.registers[Register.IR] = self.RAM[adr]
             else:
                 raise ValueError("Invalid memory address for JUZ instruction")
         else:
