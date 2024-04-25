@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk
 from interpreter import Command, Register, Interpreter
 
+
 class SimulatorGUI:
     def __init__(self, root):
         self.root = root
@@ -123,7 +124,7 @@ class SimulatorGUI:
                 self.display.insert(tk.END, line)
 
             # Create the Interpreter instance with the code from the RAM cells
-            self.interpreter = Interpreter(code, [1, 4, 7, 11, 0], self.update_display)
+            self.interpreter = Interpreter(code, self.update_display)
 
             # Clear the display
             self.display.delete('1.0', tk.END)
@@ -134,17 +135,10 @@ class SimulatorGUI:
 
     def run(self):
         if self.interpreter is not None:
-            # Read the code from the RAM cells
-            code = [cell.get() for cell in self.ram_cells if cell.get() != '']
-            # Create the Interpreter instance with the code from the RAM cells
-            self.interpreter = Interpreter(code, [1, 4, 7, 11, 0], self.update_display)
             self.interpreter.run()
             self.update_registers()
-            # Update the RAM cells with the current state of the RAM
-            for i, line in enumerate(self.interpreter.RAM):
-                self.ram_cells[i].delete(0, tk.END)
-                if line is not None:
-                    self.ram_cells[i].insert(0, line)
+            self.update_display()
+            self.update_ram()
         print("Program executed successfully!")
 
     def update_ram(self):

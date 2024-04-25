@@ -17,6 +17,7 @@ class Command(Enum):
     XOR = 12
     NOT = 13
     FIN = 14
+    DEC = 15  # decrement
 
 class Register(Enum):
     ACC = 0
@@ -26,73 +27,43 @@ class Register(Enum):
     IN = 4
     OUT = 5
     ADR = 6
+    COUNT = 7  # for multiplication
+
+
+def extract_command(line: str) -> Command:
+    first_word = line.split(" ")[0]
+    if not first_word:
+        # If the first word is an empty string, return None or raise an error
+        return None
+    try:
+        return Command[first_word]
+    except KeyError:
+        raise ValueError(f"Invalid command name: {first_word}")
 
 
 class Interpreter:
-    def __init__(self, code: List[str], input: List[int] = None, update_display=None) -> None:
+    def __init__(self, code: List[str], update_display=None) -> None:
         self.code: List[str] = code
-        self.input: List[int] = input
         self.input_pos: int = None
         self.RAM: List[str] = [None] * 32  # Initialize RAM with 32 empty slots
         self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.TEMP: 0,
                                                Register.IN: None, Register.OUT: None,
-                                               Register.ADR: None}  # Add this line
+                                               Register.ADR: None, Register.COUNT: 0}  # Add this line
 
-        self.current_line = 0
         self.load_data_into_RAM()
         self.update_display = update_display
-        self.registers[Register.PC] = 0
-        self.terminated = False
+        self.finished = False
 
     def load_data_into_RAM(self) -> None:
         for i, line in enumerate(self.code):
             self.RAM[i] = line.rstrip('\n')
-        if self.input is not None:
-            self.registers[Register.IN] = self.input[0]
-            self.input_pos = 0
 
     def load_data(self) -> None:
         self.file = [line.rstrip('\n') for line in self.code]
-        if self.input is not None:
-            self.registers[Register.IN] = self.input[0]
-            self.input_pos = 0
 
     def run(self) -> None:
-        terminated = False
-        while not self.terminated:
-            if self.registers[Register.PC] < len(self.RAM):
-                line: str = self.RAM[self.registers[Register.PC]]
-                if line is None:
-                    break
-                elif line.split(" ")[0].isdigit():
-                    # This line is data, not a command
-                    self.registers[Register.PC] += 1
-                    continue
-                else:
-                    # Load the instruction into the IR
-                    self.registers[Register.IR] = line
-                    # Parse and execute the instruction
-                    command: Command = self.extract_command(line)
-                    self.parse_command(command, line)
-
-                    # Check if the instruction was JUM or JUZ
-                    if command in [Command.JUM, Command.JUZ]:
-                        # Decrement the program counter to execute the correct instruction
-                        self.registers[Register.PC] = self.registers[Register.ADR]
-                        continue  # Skip the program counter increment below
-                    else:
-                        # Increment the program counter
-                        self.registers[Register.PC] += 1
-
-                    if self.update_display is not None:
-                        self.update_display()
-
-                if self.registers[Register.PC] >= len(self.RAM) or self.RAM[self.registers[Register.PC]] is None:
-                    terminated = True
-            else:
-                terminated = True
-
-            self.update_RAM()
+        while not self.finished:
+            self.step()
 
     def update_RAM(self):
         for i, line in enumerate(self.RAM):
@@ -100,24 +71,18 @@ class Interpreter:
                 self.RAM[i] = line.rstrip('\n')
 
     def step(self):
-        if self.current_line < len(self.RAM):  # Change this line
-            line: str = self.RAM[self.current_line]  # Change this line
+        if self.registers[Register.PC] < len(self.RAM):
+            line: str = self.RAM[self.registers[Register.PC]]
             # Load the instruction into the IR
             self.registers[Register.IR] = line
             # Parse and execute the instruction
-            command: Command = self.extract_command(line)
+            command: Command = extract_command(line)
             self.parse_command(command, line)
-            self.current_line += 1
 
-            self.registers[Register.PC] = self.current_line
+            if self.update_display is not None and self.registers[Register.OUT] is not None:
+                self.update_display()
+
             self.update_RAM()
-
-    def extract_command(self, line: str) -> Command:
-        first_word = line.split(" ")[0]
-        try:
-            return Command[first_word]
-        except KeyError:
-            raise ValueError(f"Invalid command name: {first_word}")
 
     def parse_command(self, command: Command, line: str) -> None:
         parts = line.split(" ")
@@ -235,14 +200,13 @@ class Interpreter:
     def _handle_fin(self) -> None:
         # Set the program counter to the end of the RAM
         self.registers[Register.PC] = len(self.RAM)
-        self.terminated = True
+        self.finished = True
 
     def _handle_jum(self) -> None:
         adr = self.registers[Register.ADR]
         if 0 <= adr < len(self.RAM):
-            # Load the instruction at the specified address and execute it
             self.registers[Register.PC] = adr
-            self.registers[Register.IR] = self.RAM[adr]
+            self.jump_occurred = True  # Set the flag
         else:
             raise ValueError("Invalid memory address for JUM instruction")
 
@@ -250,9 +214,8 @@ class Interpreter:
         if self.registers[Register.ACC] == 0:
             adr = self.registers[Register.ADR]
             if 0 <= adr < len(self.RAM):
-                # Load the instruction at the specified address and execute it
                 self.registers[Register.PC] = adr
-                self.registers[Register.IR] = self.RAM[adr]
+                self.jump_occurred = True  # Set the flag
             else:
                 raise ValueError("Invalid memory address for JUZ instruction")
         else:
