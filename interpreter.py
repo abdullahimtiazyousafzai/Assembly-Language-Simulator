@@ -19,15 +19,16 @@ class Command(Enum):
     FIN = 14
     DEC = 15  # decrement
 
+
 class Register(Enum):
     ACC = 0
     PC = 1
     IR = 2
-    TEMP = 3
+    DR = 3
     IN = 4
     OUT = 5
     ADR = 6
-    COUNT = 7  # for multiplication
+    CTR = 7  # for multiplication
 
 
 def extract_command(line: str) -> Command:
@@ -46,9 +47,9 @@ class Interpreter:
         self.code: List[str] = code
         self.input_pos: int = None
         self.RAM: List[str] = [None] * 32  # Initialize RAM with 32 empty slots
-        self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.TEMP: 0,
+        self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.DR: 0,
                                                Register.IN: None, Register.OUT: None,
-                                               Register.ADR: None, Register.COUNT: 0}  # Add this line
+                                               Register.ADR: None, Register.CTR: 0}  # Add this line
 
         self.load_data_into_RAM()
         self.update_display = update_display
@@ -125,7 +126,8 @@ class Interpreter:
         # Load the data from the memory address
         data = int(self.RAM[self.registers[Register.ADR]])
         # Store the data in the ACC register
-        self.registers[Register.ACC] = data
+        self.registers[Register.DR] = data
+        self.registers[Register.ACC] = self.registers[Register.DR]
         # Increment the program counter
         self.registers[Register.PC] += 1
 
@@ -156,7 +158,17 @@ class Interpreter:
     def _handle_mul(self) -> None:
         # Multiply the ACC register by the data from the memory address
         data = int(self.RAM[self.registers[Register.ADR]])
-        self.registers[Register.ACC] *= data
+        self.registers[Register.CTR] = -data
+
+        # Initialize DR with the current value of ACC
+        self.registers[Register.DR] = self.registers[Register.ACC]
+        self.registers[Register.CTR] += 1
+        while self.registers[Register.CTR] != 0:
+            # Add DR to ACC (repeated addition)
+            self.registers[Register.ACC] += self.registers[Register.DR]
+            # Increment the CTR to simulate multiplication by repeated addition
+            self.registers[Register.CTR] += 1
+
         # Increment the program counter
         self.registers[Register.PC] += 1
 
