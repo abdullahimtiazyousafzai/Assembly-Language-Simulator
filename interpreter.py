@@ -46,7 +46,7 @@ class Interpreter:
     def __init__(self, code: List[str], update_display=None) -> None:
         self.code: List[str] = code
         self.input_pos: int = None
-        self.RAM: List[str] = [None] * 32  # Initialize RAM with 32 empty slots
+        self.RAM: List[str] = [None] * 4096  # Initialize RAM with 32 empty slots
         self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.DR: 0,
                                                Register.IN: None, Register.OUT: None,
                                                Register.ADR: None, Register.CTR: 0}  # Add this line
