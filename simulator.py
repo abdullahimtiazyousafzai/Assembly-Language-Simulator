@@ -69,8 +69,7 @@ class SimulatorGUI:
     def create_ram(self):
         self.ram_frame = ttk.LabelFrame(self.root, text="RAM")
         self.ram_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.save_button = ttk.Button(self.ram_frame, text="Save Program", command=self.save_program)
-        self.save_button.pack(side=tk.BOTTOM)
+
         self.ram_cells = []
         for i in range(32):
             if i == 16:
@@ -83,6 +82,9 @@ class SimulatorGUI:
             cell_entry = ttk.Entry(cell_frame)
             cell_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self.ram_cells.append(cell_entry)
+
+        self.save_button = ttk.Button(self.ram_frame, text="Save Program", command=self.save_program)
+        self.save_button.pack(side=tk.TOP)
 
     def create_display(self):
         self.display_frame = ttk.LabelFrame(self.root, text="Display")
@@ -100,11 +102,10 @@ class SimulatorGUI:
         self.input_register_frame = ttk.LabelFrame(self.root, text="Input Register")
         self.set_input_button = ttk.Button(self.input_register_frame, text="Set Input Register",
                                            command=self.set_input_register)
-        self.set_input_button.pack(side=tk.BOTTOM)
-        self.input_register_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.input_register = ttk.Entry(self.input_register_frame)
         self.input_register.pack(side=tk.TOP)
-
+        self.set_input_button.pack(side=tk.TOP)
+        self.input_register_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def set_input_register(self):
         if self.interpreter is not None:
