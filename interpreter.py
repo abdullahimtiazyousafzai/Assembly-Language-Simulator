@@ -1,5 +1,6 @@
 from typing import List, Dict
 from enum import Enum
+from tkinter import messagebox
 
 class Command(Enum):
     LOM = 0
@@ -25,10 +26,11 @@ class Register(Enum):
     PC = 1
     IR = 2
     DR = 3
-    IN = 4
-    OUT = 5
-    ADR = 6
-    CTR = 7  # for multiplication
+    CTR = 4  # counter
+    OUTR = 5
+    AR = 6
+    INPR = 7  # input register
+
 
 
 def extract_command(line: str) -> Command:
@@ -46,10 +48,10 @@ class Interpreter:
     def __init__(self, code: List[str], update_display=None) -> None:
         self.code: List[str] = code
         self.input_pos: int = None
-        self.RAM: List[str] = [None] * 4096  # Initialize RAM with 32 empty slots
+        self.RAM: List[str] = [None] * 32  # Initialize RAM with 32 empty slots
         self.registers: Dict[Register, int] = {Register.ACC: 0, Register.PC: 0, Register.IR: 0, Register.DR: 0,
-                                               Register.IN: None, Register.OUT: None,
-                                               Register.ADR: None, Register.CTR: 0}  # Add this line
+                                               Register.INPR: None, Register.OUTR: None,
+                                               Register.AR: None, Register.CTR: 0}  # Add this line
 
         self.load_data_into_RAM()
         self.update_display = update_display
@@ -72,24 +74,31 @@ class Interpreter:
                 self.RAM[i] = line.rstrip('\n')
 
     def step(self):
-        if self.registers[Register.PC] < len(self.RAM):
+        if self.registers[Register.PC] < len(self.RAM) and not self.finished:
             line: str = self.RAM[self.registers[Register.PC]]
             # Load the instruction into the IR
             self.registers[Register.IR] = line
-            # Parse and execute the instruction
+            # Pse and execute the instruction
             command: Command = extract_command(line)
-            self.parse_command(command, line)
+            self.pse_command(command, line)
 
-            if self.update_display is not None and self.registers[Register.OUT] is not None:
+            def stop(self):
+                if self.interpreter is not None:
+                    self.interpreter.finished = True
+                    print("Program execution stopped!")
+
+            if self.update_display is not None and self.registers[Register.OUTR] is not None:
                 self.update_display()
 
             self.update_RAM()
+        else:
+            messagebox.showinfo("Program Finished", "The program has finished executing.")
 
-    def parse_command(self, command: Command, line: str) -> None:
-        parts = line.split(" ")
-        # Load the address part of the instruction into the AR
-        if len(parts) > 1:
-            self.registers[Register.ADR] = int(parts[1])
+    def pse_command(self, command: Command, line: str) -> None:
+        pts = line.split(" ")
+        # Load the address pt of the instruction into the
+        if len(pts) > 1:
+            self.registers[Register.AR] = int(pts[1])
         # Execute the command
         if command == Command.LOM:
             self._handle_lom()
@@ -124,7 +133,7 @@ class Interpreter:
 
     def _handle_lom(self) -> None:
         # Load the data from the memory address
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         # Store the data in the ACC register
         self.registers[Register.DR] = data
         self.registers[Register.ACC] = self.registers[Register.DR]
@@ -132,32 +141,32 @@ class Interpreter:
         self.registers[Register.PC] += 1
 
     def _handle_out(self) -> None:
-        self.registers[Register.OUT] = self.registers[Register.ACC]
+        self.registers[Register.OUTR] = self.registers[Register.ACC]
         self.registers[Register.PC] += 1
 
     def _handle_sto(self) -> None:
         # Store the data from the ACC register to the memory address
-        self.RAM[self.registers[Register.ADR]] = str(self.registers[Register.ACC])
+        self.RAM[self.registers[Register.AR]] = str(self.registers[Register.ACC])
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_add(self) -> None:
         # Add the data from the memory address to the ACC register
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.ACC] += data
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_sub(self) -> None:
         # Subtract the data from the memory address from the ACC register
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.ACC] -= data
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_mul(self) -> None:
         # Multiply the ACC register by the data from the memory address
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.CTR] = -data
 
         # Initialize DR with the current value of ACC
@@ -173,32 +182,32 @@ class Interpreter:
         self.registers[Register.PC] += 1
 
     def _handle_inr(self) -> None:
-        # Increment the register specified by the ADR register
+        # Increment the register specified by the AR register
         self.registers[Register.ACC] += 1
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_inp(self) -> None:
-        self.registers[Register.ACC] = self.registers[Register.IN]
+        self.registers[Register.ACC] = self.registers[Register.INPR]
         self.registers[Register.PC] += 1
 
     def _handle_and(self) -> None:
         # Perform a bitwise AND operation on the ACC register and the data from the memory address
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.ACC] &= data
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_or(self) -> None:
         # Perform a bitwise OR operation on the ACC register and the data from the memory address
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.ACC] |= data
         # Increment the program counter
         self.registers[Register.PC] += 1
 
     def _handle_xor(self) -> None:
         # Perform a bitwise XOR operation on the ACC register and the data from the memory address
-        data = int(self.RAM[self.registers[Register.ADR]])
+        data = int(self.RAM[self.registers[Register.AR]])
         self.registers[Register.ACC] ^= data
         # Increment the program counter
         self.registers[Register.PC] += 1
@@ -210,12 +219,10 @@ class Interpreter:
         self.registers[Register.PC] += 1
 
     def _handle_fin(self) -> None:
-        # Set the program counter to the end of the RAM
-        self.registers[Register.PC] = len(self.RAM)
         self.finished = True
 
     def _handle_jum(self) -> None:
-        adr = self.registers[Register.ADR]
+        adr = self.registers[Register.AR]
         if 0 <= adr < len(self.RAM):
             self.registers[Register.PC] = adr
             self.jump_occurred = True  # Set the flag
@@ -224,7 +231,7 @@ class Interpreter:
 
     def _handle_juz(self) -> None:
         if self.registers[Register.ACC] == 0:
-            adr = self.registers[Register.ADR]
+            adr = self.registers[Register.AR]
             if 0 <= adr < len(self.RAM):
                 self.registers[Register.PC] = adr
                 self.jump_occurred = True  # Set the flag
@@ -234,4 +241,4 @@ class Interpreter:
             self.registers[Register.PC] += 1
 
     def __is_comment(self, line: str) -> bool:
-        return line.startswith('#')
+        return line.sttswith('#')

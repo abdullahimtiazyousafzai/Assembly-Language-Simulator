@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, scrolledtext, ttk
+from tkinter import filedialog, scrolledtext, ttk, messagebox
 from interpreter import Command, Register, Interpreter
 
 
@@ -12,23 +12,24 @@ class SimulatorGUI:
         self.create_interface()
         self.cpu_entries = []
         for i, register in enumerate(Register):
-            ttk.Label(self.cpu_frame, text=f"{register.name}: ").pack(side=tk.TOP)
-            register_entry = ttk.Entry(self.cpu_frame)
+            ttk.Label(self.cpu_frame, text=f"{register.name}: ", style='TLabel').pack(
+                side=tk.TOP)  # Apply the style to the label
+            register_entry = ttk.Entry(self.cpu_frame, style='TEntry')  # Apply the style to the entry
             register_entry.pack(side=tk.TOP)
             self.cpu_entries.append(register_entry)
 
     def create_interface(self):
         self.create_hard_disk()
         self.create_cpu()
+        self.create_input_register()
         self.create_ram()
         self.create_display()
-        self.create_printer()
-        self.create_input_register()
+
 
     def create_hard_disk(self):
-        self.hard_disk_frame = ttk.LabelFrame(self.root, text="Hard Disk")
-        self.hard_disk_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.load_button = ttk.Button(self.hard_disk_frame, text="Load Code File", command=self.load_code_file)
+        self.hard_disk_frame = ttk.LabelFrame(self.root, text="Hard Disk",)
+        self.hard_disk_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,)
+        self.load_button = ttk.Button(self.hard_disk_frame, text="Load Code File", command=self.load_code_file,)
         self.load_button.pack(side=tk.TOP)
 
     def create_cpu(self):
@@ -41,8 +42,6 @@ class SimulatorGUI:
         self.stop_button = ttk.Button(self.cpu_frame, text="Stop", command=self.stop)
         self.stop_button.pack(side=tk.TOP)
         self.cpu_entries = []
-        self.reset_button = ttk.Button(self.cpu_frame, text="Reset Registers", command=self.reset_registers)
-        self.reset_button.pack(side=tk.TOP)
 
     def reset_registers(self):
         if self.interpreter is not None:
@@ -52,12 +51,14 @@ class SimulatorGUI:
             print("Registers reset successfully!")
 
     def save_program(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")],
+                                                 title="Save Program")
         if file_path:
             with open(file_path, 'w') as file:
                 for cell in self.ram_cells:
                     file.write(cell.get() + '\n')
             print("Program saved successfully!")
+            self.load_code_file()  # Load the saved program into the simulator
 
     def update_registers(self):
         registers = self.interpreter.registers
@@ -94,17 +95,26 @@ class SimulatorGUI:
     def clear_display(self):
         self.display.delete('1.0', tk.END)
 
-    def create_printer(self):
-        self.printer_frame = ttk.LabelFrame(self.root, text="Printer")
-        self.printer_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.printer = scrolledtext.ScrolledText(self.printer_frame, wrap=tk.WORD, height=10, width=80)
-        self.printer.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-
     def create_input_register(self):
+
         self.input_register_frame = ttk.LabelFrame(self.root, text="Input Register")
+        self.set_input_button = ttk.Button(self.input_register_frame, text="Set Input Register",
+                                           command=self.set_input_register)
+        self.set_input_button.pack(side=tk.BOTTOM)
         self.input_register_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.input_register = ttk.Entry(self.input_register_frame)
         self.input_register.pack(side=tk.TOP)
+
+
+    def set_input_register(self):
+        if self.interpreter is not None:
+            try:
+                input_value = int(self.input_register.get())
+                self.interpreter.registers[Register.INPR] = input_value
+                self.update_registers()
+                print(f"Input register set to {input_value}!")
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid integer.")
 
     def load_code_file(self):
         file_path = filedialog.askopenfilename()
@@ -131,7 +141,8 @@ class SimulatorGUI:
             self.reset_registers()
 
     def update_display(self):
-        self.display.insert(tk.END, str(self.interpreter.registers[Register.OUT]) + '\n')
+        if self.interpreter.registers[Register.OUTR] != 0:
+            self.display.insert(tk.END, str(self.interpreter.registers[Register.OUTR]) + '\n')
 
     def run(self):
         if self.interpreter is not None:
@@ -156,7 +167,9 @@ class SimulatorGUI:
             self.update_ram()
 
     def stop(self):
-        pass
+        if self.interpreter is not None:
+            self.interpreter.finished = True
+            messagebox.showinfo("Program Finished", "The program has finished executing.")
 
 
 root = tk.Tk()
