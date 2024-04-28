@@ -10,6 +10,41 @@ This project is a simple assembly code simulator built with Python and Tkinter. 
 - View the state of the CPU registers and RAM
 - View the output of the code
 
+## Instructions
+
+The simulator supports the following instructions:
+
+- LOM: Load the data from the memory address into the ACC register. Format: `LOM <address>`
+- OUT: Output the value in the ACC register. Format: `OUT`
+- STO: Store the data from the ACC register to the memory address. Format: `STO <address>`
+- ADD: Add the data from the memory address to the ACC register. Format: `ADD <address>`
+- SUB: Subtract the data from the memory address from the ACC register. Format: `SUB <address>`
+- MUL: Multiply the ACC register by the data from the memory address. Format: `MUL <address>`
+- INR: Increment the register specified by the AR register. Format: `INR`
+- INP: Load the value from the INPR register into the ACC register. Format: `INP`
+- AND: Perform a bitwise AND operation on the ACC register and the data from the memory address. Format: `AND <address>`
+- OR: Perform a bitwise OR operation on the ACC register and the data from the memory address. Format: `OR <address>`
+- XOR: Perform a bitwise XOR operation on the ACC register and the data from the memory address. Format: `XOR <address>`
+- NOT: Perform a bitwise NOT operation on the ACC register. Format: `NOT`
+- JUM: Jump to the memory address specified by the AR register. Format: `JUM <address>`
+- JUZ: Jump to the memory address specified by the AR register if the ACC register is zero. Format: `JUZ <address>`
+- FIN: Finish the program execution. Format: `FIN`
+
+In the above formats, `<address>` represents the memory address to be used by the instruction.
+
+## Registers
+
+The simulator uses the following registers:
+
+- ACC: Accumulator register
+- PC: Program counter
+- IR: Instruction register
+- DR: Data register
+- CTR: Counter register
+- OUTR: Output register
+- AR: Address register
+- INPR: Input register
+
 ## Usage
 
 1. Clone the repository to your local machine.
