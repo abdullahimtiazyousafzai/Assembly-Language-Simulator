@@ -1,6 +1,5 @@
 # Assembly Language Simulator
 
-
 This project is a simple assembly code simulator built with Python and Tkinter. It allows you to load assembly code from a file, run it, and see the results in a GUI.
 
 ## Features
