@@ -10,7 +10,7 @@ This project is a simple assembly code simulator built with Python and Tkinter. 
 - View the state of the CPU registers and RAM
 - View the output of the code
 
-## Instructions
+## Instruction Set
 
 The simulator supports the following instructions:
 
@@ -48,7 +48,7 @@ The simulator uses the following registers:
 ## Usage
 
 1. Clone the repository to your local machine.
-2. Run `simulator.py` to start the simulator.
+2. Run `simulator.exe` from `dist/`to start the simulator or run the `simulator.py` file in any python supported IDE (ensure both the `simulator.py` and `interpreter.py` are in the same project).
 3. Click the "Load Code File" button to load assembly code from a file.
 4. Click the "Run" button to run the loaded code.
 5. Click the "Step" button to step through the code one line at a time.
