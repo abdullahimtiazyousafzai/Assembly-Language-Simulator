@@ -18,7 +18,7 @@ The simulator supports the following instructions:
 - OUT: Output the value in the ACC register. Format: `OUT`
 - STO: Store the data from the ACC register to the memory address. Format: `STO <address>`
 - ADD: Add the data from the memory address to the ACC register. Format: `ADD <address>`
-- SUB: Subtract the data from the memory address from the ACC register. Format: `SUB <address>`
+- SUB: Subtract the data from the ACC register. Format: `SUB <address>`
 - MUL: Multiply the ACC register by the data from the memory address. Format: `MUL <address>`
 - INR: Increment the register specified by the AR register. Format: `INR`
 - INP: Load the value from the INPR register into the ACC register. Format: `INP`
