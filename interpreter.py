@@ -170,7 +170,6 @@ class Interpreter:
         self.registers[Register.CTR] = -data
 
         # Initialize DR with the current value of ACC
-        self.registers[Register.DR] = self.registers[Register.ACC]
         self.registers[Register.CTR] += 1
         while self.registers[Register.CTR] != 0:
             # Add DR to ACC (repeated addition)
